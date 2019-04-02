@@ -40,29 +40,23 @@ class DenseBlock(Layer):
             for i in range(block_layers):
                 internal_layer = BatchNormLayer(current_layer,
                                                 is_train=True,
-                                                use_cudnn_on_gpu=use_cudnn_on_gpu,
                                                 act=tf.nn.relu,
-                                                data_format=data_format,
                                                 name=("batchnorm_layer" + str(i)))
                 internal_layer = Conv2dLayer(internal_layer,
                                              shape=(3, 3, growing_features, growth),
                                              b_init=None,
                                              use_cudnn_on_gpu=use_cudnn_on_gpu,
-                                             data_format=data_format,
                                              name=("cnn_layer" + str(i)))
                 internal_layer = DropoutLayer(internal_layer,
-                                              keep=keep,
-                                              data_format=data_format,
-                                              use_cudnn_on_gpu=use_cudnn_on_gpu)
+                                              keep=keep)
                 current_layer = ConcatLayer([current_layer, internal_layer],
                                             concat_dim=3,
-                                            use_cudnn_on_gpu=use_cudnn_on_gpu,
-                                            data_format=data_format,
                                             name="concat_layer" + str(i))
                 growing_features += growth
 
             self.outputs = current_layer.outputs
 
+        self.output_features = growing_features
         self._add_layers(self.outputs)
 
 
