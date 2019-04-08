@@ -45,7 +45,7 @@ class DenseBlock(Layer):
 
                 if bottle_neck is True:
                     internal_layer = BatchNormLayer(current_layer,
-                                                    is_train=True,
+                                                    is_train=False,
                                                     act=tf.nn.relu,
                                                     name=("batchnorm_layer_bn" + str(i + 1)))
                     internal_layer = Conv2dLayer(internal_layer,
@@ -56,7 +56,7 @@ class DenseBlock(Layer):
                     internal_in_features = 4 * growth
 
                 internal_layer = BatchNormLayer(internal_layer if bottle_neck else current_layer,
-                                                is_train=True,
+                                                is_train=False,
                                                 act=tf.nn.relu,
                                                 name=("batchnorm_layer" + str(i + 1)))
                 internal_layer = Conv2dLayer(internal_layer,
@@ -75,6 +75,9 @@ class DenseBlock(Layer):
             self.outputs = current_layer.outputs
 
         self.output_features = growing_features
-        self._add_layers(self.outputs)
+
+        self._add_params(current_layer.all_params)
+        self._add_layers(current_layer.all_layers)
+
 
 
