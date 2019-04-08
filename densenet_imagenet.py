@@ -11,7 +11,15 @@ densenet_264_structure = dict(block1=6, block2=12, block3=64, block4=48,
                               k=24, n_units=1000)
 
 
-def model_densenet(placeholder_x, placeholder_y_, keep=0.8, compression=True, structure=densenet_264_structure, use_cudnn_on_gpu=False):
+def model_densenet(placeholder_x, placeholder_y_, keep=0.8, densenet_bc=True, structure=densenet_264_structure, use_cudnn_on_gpu=False):
+
+    if densenet_bc is True:
+        compression = True
+        bottle_neck = True
+    else:
+        compression = False
+        bottle_neck = False
+
     with tf.variable_scope("densenet_imagenet"):
 
         net = tl.layers.InputLayer(placeholder_x, name='input')
@@ -35,6 +43,7 @@ def model_densenet(placeholder_x, placeholder_y_, keep=0.8, compression=True, st
                              in_features=features,
                              growth=structure['k'],
                              keep=keep,
+                             bottle_neck=bottle_neck,
                              use_cudnn_on_gpu=use_cudnn_on_gpu,
                              name='denseblock' + str(idx + 1)
                              )
@@ -66,6 +75,7 @@ def model_densenet(placeholder_x, placeholder_y_, keep=0.8, compression=True, st
                          in_features=features,
                          growth=structure['k'],
                          keep=keep,
+                         bottle_neck=bottle_neck,
                          use_cudnn_on_gpu=use_cudnn_on_gpu,
                          name='denseblock4'
                          )
