@@ -7,7 +7,7 @@ tf.logging.set_verbosity(tf.logging.DEBUG)
 tl.logging.set_verbosity(tl.logging.DEBUG)
 
 
-densenet_264_structure = dict(block_1=6, block_2=12, block_3=64, block_4=48, k=24)
+densenet_264_structure = dict(block_1=6, block_2=12, block_3=64, block_4=48, k=24, n_units=1000)
 
 
 def model_densenet(placeholder_x, placeholder_y_, keep=0.8, structure=densenet_264_structure, use_cudnn_on_gpu=False):
@@ -99,18 +99,30 @@ def model_densenet(placeholder_x, placeholder_y_, keep=0.8, structure=densenet_2
                                     name='conv3')
         net = tl.layers.PoolLayer(net,
                                   pool=tf.nn.avg_pool,
-                                  name='pool_layer2')
+                                  name='pool_layer3')
+        # 7*7
+
+        net = DenseBlock(net,
+                         block_layers=structure['block_4'],
+                         in_features=features,
+                         growth=structure['k'],
+                         keep=keep,
+                         use_cudnn_on_gpu=use_cudnn_on_gpu,
+                         name='denseblock4'
+                         )
+
+        features = net.output_features
         # 7*7
         net = tl.layers.PoolLayer(net,
                                   ksize=(1, 7, 7, 1),
                                   strides=(1, 7, 7, 1),
                                   pool=tf.nn.avg_pool,
-                                  name='pool_layer3')
+                                  name='pool_layer_out')
 
         net = tl.layers.ReshapeLayer(net,
                                      [-1, features])
         net = tl.layers.DenseLayer(net,
-                                   n_units=10,
+                                   n_units=structure['n_units'],
                                    name='output_layer')
         y = net.outputs
         y_op = tf.argmax(tf.nn.softmax(y), 1)
