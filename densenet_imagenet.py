@@ -11,7 +11,7 @@ densenet_264_structure = dict(block1=6, block2=12, block3=64, block4=48,
                               k=24, n_units=1000)
 
 
-def model_densenet(placeholder_x, placeholder_y_, keep=0.8, compression=False, structure=densenet_264_structure, use_cudnn_on_gpu=False):
+def model_densenet(placeholder_x, placeholder_y_, keep=0.8, compression=True, structure=densenet_264_structure, use_cudnn_on_gpu=False):
     with tf.variable_scope("densenet_imagenet"):
 
         net = tl.layers.InputLayer(placeholder_x, name='input')

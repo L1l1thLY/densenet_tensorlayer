@@ -47,29 +47,29 @@ class DenseBlock(Layer):
                     internal_layer = BatchNormLayer(current_layer,
                                                     is_train=True,
                                                     act=tf.nn.relu,
-                                                    name=("batchnorm_layer_bn" + str(i)))
+                                                    name=("batchnorm_layer_bn" + str(i + 1)))
                     internal_layer = Conv2dLayer(internal_layer,
                                                  shape=(1, 1, internal_in_features, 4 * growth),
                                                  b_init=None,
                                                  use_cudnn_on_gpu=use_cudnn_on_gpu,
-                                                 name=("cnn_layer_bn" + str(i)))
+                                                 name=("cnn_layer_bn" + str(i + 1)))
                     internal_in_features = 4 * growth
 
                 internal_layer = BatchNormLayer(internal_layer if bottle_neck else current_layer,
                                                 is_train=True,
                                                 act=tf.nn.relu,
-                                                name=("batchnorm_layer" + str(i)))
+                                                name=("batchnorm_layer" + str(i + 1)))
                 internal_layer = Conv2dLayer(internal_layer,
                                              shape=(3, 3, internal_in_features, growth),
                                              b_init=None,
                                              use_cudnn_on_gpu=use_cudnn_on_gpu,
-                                             name=("cnn_layer" + str(i)))
+                                             name=("cnn_layer" + str(i + 1)))
                 internal_layer = DropoutLayer(internal_layer,
                                               keep=keep)
-                
+
                 current_layer = ConcatLayer([current_layer, internal_layer],
                                             concat_dim=3,
-                                            name="concat_layer" + str(i))
+                                            name="concat_layer" + str(i + 1))
                 growing_features += growth
 
             self.outputs = current_layer.outputs
