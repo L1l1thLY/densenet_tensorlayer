@@ -35,7 +35,6 @@ def model_densenet(placeholder_x, placeholder_y_, keep=0.8, use_cudnn_on_gpu=Fal
                                     use_cudnn_on_gpu=use_cudnn_on_gpu,
                                     name='conv1')
         net = tl.layers.PoolLayer(net,
-                                  padding='VALID',
                                   pool=tf.nn.avg_pool,
                                   name='pool_layer1')
         net = DenseBlock(net,
@@ -59,7 +58,6 @@ def model_densenet(placeholder_x, placeholder_y_, keep=0.8, use_cudnn_on_gpu=Fal
                                     use_cudnn_on_gpu=use_cudnn_on_gpu,
                                     name='conv2')
         net = tl.layers.PoolLayer(net,
-                                  padding='VALID',
                                   pool=tf.nn.avg_pool,
                                   name='pool_layer2')
         net = DenseBlock(net,
@@ -80,7 +78,6 @@ def model_densenet(placeholder_x, placeholder_y_, keep=0.8, use_cudnn_on_gpu=Fal
         net = tl.layers.PoolLayer(net,
                                   ksize=(1, 8, 8, 1),
                                   strides=(1, 8, 8, 1),
-                                  padding='VALID',
                                   pool=tf.nn.avg_pool,
                                   name='pool_layer3')
         net = tl.layers.ReshapeLayer(net,
@@ -99,7 +96,9 @@ def model_densenet(placeholder_x, placeholder_y_, keep=0.8, use_cudnn_on_gpu=Fal
 
 if __name__ == '__main__':
 
-    #X_train, y_train, X_test, y_test = tl.files.load_cifar10_dataset(shape=(-1, 32, 32, 3))
+    X_train, y_train, X_test, y_test = tl.files.load_cifar10_dataset(shape=(-1, 32, 32, 3))
+
+    tl.prepro.threading_data()
 
     sess = tf.InteractiveSession()
 
@@ -110,5 +109,4 @@ if __name__ == '__main__':
 
     sess.run(tf.global_variables_initializer())
 
-    net.print_params(False)
     net.print_layers()
