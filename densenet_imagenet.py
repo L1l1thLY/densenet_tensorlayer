@@ -6,13 +6,16 @@ from layers.denseblock import DenseBlock
 tf.logging.set_verbosity(tf.logging.DEBUG)
 tl.logging.set_verbosity(tl.logging.DEBUG)
 
-
 densenet_264_structure = dict(block1=6, block2=12, block3=64, block4=48,
                               k=24, n_units=1000)
 
 
-def model_densenet(placeholder_x, placeholder_y_, keep=0.8, densenet_bc=True, structure=densenet_264_structure, use_cudnn_on_gpu=False):
-
+def model_densenet(placeholder_x, placeholder_y_, reuse,
+                   keep=0.8,
+                   densenet_bc=True,
+                   is_train=True,
+                   structure=densenet_264_structure,
+                   use_cudnn_on_gpu=False):
     if densenet_bc is True:
         compression = True
         bottle_neck = True
@@ -20,12 +23,13 @@ def model_densenet(placeholder_x, placeholder_y_, keep=0.8, densenet_bc=True, st
         compression = False
         bottle_neck = False
 
-    with tf.variable_scope("densenet_imagenet"):
+    with tf.variable_scope("densenet_imagenet", reuse=reuse):
 
         net = tl.layers.InputLayer(placeholder_x, name='input')
         net = tl.layers.Conv2dLayer(net,
                                     shape=(7, 7, 3, 2 * structure['k']),
                                     strides=(1, 2, 2, 1),
+                                    data_format='NHWC',
                                     b_init=None,
                                     name='conv_in')
 
@@ -43,6 +47,7 @@ def model_densenet(placeholder_x, placeholder_y_, keep=0.8, densenet_bc=True, st
                              in_features=features,
                              growth=structure['k'],
                              keep=keep,
+                             is_train=is_train,
                              bottle_neck=bottle_neck,
                              use_cudnn_on_gpu=use_cudnn_on_gpu,
                              name='denseblock' + str(idx + 1)
@@ -56,12 +61,13 @@ def model_densenet(placeholder_x, placeholder_y_, keep=0.8, densenet_bc=True, st
 
             net = tl.layers.BatchNormLayer(net,
                                            act=tf.nn.relu,
-                                           is_train=True,
+                                           is_train=is_train,
                                            name="batch_norm" + str(idx + 1)
                                            )
             net = tl.layers.Conv2dLayer(net,
                                         shape=(1, 1, features, out_features),
                                         b_init=None,
+                                        data_format='NHWC',
                                         use_cudnn_on_gpu=use_cudnn_on_gpu,
                                         name='conv' + str(idx + 1))
             net = tl.layers.PoolLayer(net,
@@ -75,6 +81,7 @@ def model_densenet(placeholder_x, placeholder_y_, keep=0.8, densenet_bc=True, st
                          in_features=features,
                          growth=structure['k'],
                          keep=keep,
+                         is_train=is_train,
                          bottle_neck=bottle_neck,
                          use_cudnn_on_gpu=use_cudnn_on_gpu,
                          name='denseblock4'
@@ -102,7 +109,6 @@ def model_densenet(placeholder_x, placeholder_y_, keep=0.8, densenet_bc=True, st
         return net
 
 
-
 if __name__ == '__main__':
     sess = tf.InteractiveSession()
 
@@ -113,4 +119,4 @@ if __name__ == '__main__':
 
     sess.run(tf.global_variables_initializer())
 
-    net.print_layers()
+    net.print_params()
