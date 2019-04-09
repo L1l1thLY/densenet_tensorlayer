@@ -18,6 +18,7 @@ class DenseBlock(Layer):
             in_features,
             growth,
             keep,
+            is_train,
             use_cudnn_on_gpu=None,
             bottle_neck=True,
             name='dense_block',
@@ -45,26 +46,29 @@ class DenseBlock(Layer):
 
                 if bottle_neck is True:
                     internal_layer = BatchNormLayer(current_layer,
-                                                    is_train=False,
                                                     act=tf.nn.relu,
+                                                    is_train=is_train,
                                                     name=("batchnorm_layer_bn" + str(i + 1)))
                     internal_layer = Conv2dLayer(internal_layer,
                                                  shape=(1, 1, internal_in_features, 4 * growth),
                                                  b_init=None,
+                                                 data_format='NHWC',
                                                  use_cudnn_on_gpu=use_cudnn_on_gpu,
                                                  name=("cnn_layer_bn" + str(i + 1)))
                     internal_in_features = 4 * growth
 
                 internal_layer = BatchNormLayer(internal_layer if bottle_neck else current_layer,
-                                                is_train=False,
+                                                is_train=is_train,
                                                 act=tf.nn.relu,
                                                 name=("batchnorm_layer" + str(i + 1)))
                 internal_layer = Conv2dLayer(internal_layer,
                                              shape=(3, 3, internal_in_features, growth),
                                              b_init=None,
+                                             data_format='NHWC',
                                              use_cudnn_on_gpu=use_cudnn_on_gpu,
                                              name=("cnn_layer" + str(i + 1)))
                 internal_layer = DropoutLayer(internal_layer,
+                                              is_fix=True,
                                               keep=keep)
 
                 current_layer = ConcatLayer([current_layer, internal_layer],
