@@ -106,8 +106,12 @@ def model_densenet(placeholder_x, placeholder_y_, reuse,
 
         cost = tl.cost.cross_entropy(y, placeholder_y_, name='ce')
 
-        correct = tf.equal(y_op, y_)
+        correct = tf.equal(y_op, placeholder_y_)
         acc = tf.reduce_mean(tf.cast(correct, tf.float32))
+
+        tf.summary.scalar('cost', cost)
+        tf.summary.scalar('accuracy', acc)
+
 
         return model_net, cost, acc
 
@@ -121,7 +125,7 @@ if __name__ == '__main__':
     net, cost, _ = model_densenet(x, y_, reuse=False, is_train=True, use_cudnn_on_gpu=True)
     _, cost_test, acc = model_densenet(x, y_, True, is_train=False, use_cudnn_on_gpu=True)
 
-    n_epoch = 50000
+    n_epoch = 10000
     learning_rate = 0.0001
     print_freq = 1
     batch_size = 128
@@ -131,6 +135,8 @@ if __name__ == '__main__':
 
     sess.run(tf.global_variables_initializer())
 
+    writer = tf.summary.FileWriter("logs/", sess.graph)
+
     for epoch in range(n_epoch):
         start_time = time.time()
         for X_train_a, y_train_a in tl.iterate.minibatches(X_train, y_train, batch_size, shuffle=True):
@@ -139,6 +145,7 @@ if __name__ == '__main__':
 
         if epoch + 1 == 1 or (epoch + 1) % print_freq == 0:
             print("Epoch %d of %d took %fs" % (epoch + 1, n_epoch, time.time() - start_time))
+
 
             test_loss, test_acc, n_batch = 0, 0, 0
             for X_test_a, y_test_a in tl.iterate.minibatches(X_test, y_test, batch_size, shuffle=False):
@@ -150,4 +157,9 @@ if __name__ == '__main__':
 
             print("   test loss: %f" % (test_loss / n_batch))
             print("   test acc: %f" % (test_acc / n_batch))
+
+
+            if (test_acc / n_batch) > 0.90:
+                tl.files.save_ckpt(sess, str='densenet_cifar10_epoch' + str(epoch) + '.ckpt')
+                print("epoch:" + str(epoch) + " model saved!")
 
