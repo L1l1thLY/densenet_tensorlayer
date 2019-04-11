@@ -2,8 +2,11 @@ import tensorflow as tf
 import tensorlayer as tl
 import numpy as np
 import time
+import os
 
 from layers.denseblock import DenseBlock
+
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
 tf.logging.set_verbosity(tf.logging.DEBUG)
 tl.logging.set_verbosity(tl.logging.DEBUG)
@@ -109,8 +112,8 @@ def model_densenet(placeholder_x, placeholder_y_, reuse,
         correct = tf.equal(y_op, placeholder_y_)
         acc = tf.reduce_mean(tf.cast(correct, tf.float32))
 
-        tf.summary.scalar('cost', cost)
-        tf.summary.scalar('accuracy', acc)
+       # tf.summary.scalar('cost', cost)
+       # tf.summary.scalar('accuracy', acc)
 
 
         return model_net, cost, acc
@@ -122,22 +125,29 @@ if __name__ == '__main__':
     x = tf.placeholder(tf.float32, shape=[None, 32, 32, 3], name='x')
     y_ = tf.placeholder(tf.int64, shape=[None], name='y_')
 
-    net, cost, _ = model_densenet(x, y_, reuse=False, is_train=True, use_cudnn_on_gpu=True)
-    _, cost_test, acc = model_densenet(x, y_, True, is_train=False, use_cudnn_on_gpu=True)
+    net, cost, _ = model_densenet(x, y_, reuse=False, densenet_bc=False, is_train=True, use_cudnn_on_gpu=True)
+    _, cost_test, acc = model_densenet(x, y_, True, densenet_bc=False, is_train=False, use_cudnn_on_gpu=True)
 
-    n_epoch = 10000
-    learning_rate = 0.0001
+    n_epoch_fast = 150
+    n_epoch = 400
+  #  learning_rate = 0.0001
     print_freq = 1
     batch_size = 128
 
     train_params = net.all_params
-    train_op = tf.train.AdamOptimizer(learning_rate).minimize(cost, var_list=train_params)
-
+    train_op_fast = tf.train.AdamOptimizer(learning_rate=0.01).minimize(cost, var_list=train_params)
+    train_op_low = tf.train.AdamOptimizer(learning_rate=0.001).minimize(cost, var_list=train_params)
     sess.run(tf.global_variables_initializer())
 
     writer = tf.summary.FileWriter("logs/", sess.graph)
 
+    train_op = train_op_fast
+
     for epoch in range(n_epoch):
+
+        if epoch == n_epoch_fast:
+            train_op = train_op_low
+
         start_time = time.time()
         for X_train_a, y_train_a in tl.iterate.minibatches(X_train, y_train, batch_size, shuffle=True):
             X_train_a = tl.prepro.threading_data(X_train_a, fn=distort_fn, is_train=True)  # data augmentation for training
@@ -158,8 +168,7 @@ if __name__ == '__main__':
             print("   test loss: %f" % (test_loss / n_batch))
             print("   test acc: %f" % (test_acc / n_batch))
 
-
-            if (test_acc / n_batch) > 0.90:
-                tl.files.save_ckpt(sess, str='densenet_cifar10_epoch' + str(epoch) + '.ckpt')
+            if (epoch == 1) or (epoch == n_epoch_fast) or (epoch == 300) or (epoch == n_epoch - 1) :
+                tl.files.save_ckpt(sess, mode_name=('densenet_nobc_cifar10_epoch' + str(epoch) + '.ckpt'))
                 print("epoch:" + str(epoch) + " model saved!")
 

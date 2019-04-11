@@ -106,6 +106,7 @@ def model_densenet(placeholder_x, placeholder_y_, reuse,
 
         cost = tl.cost.cross_entropy(y, placeholder_y_, name='ce')
 
+
         return net
 
 
